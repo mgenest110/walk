@@ -13,29 +13,32 @@ import (
 type NumberEdit struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -47,9 +50,11 @@ type NumberEdit struct {
 	Increment      float64
 	MaxValue       float64
 	MinValue       float64
-	Prefix         string
+	Prefix         Property
 	OnValueChanged walk.EventHandler
-	Suffix         string
+	ReadOnly       Property
+	Suffix         Property
+	TextColor      walk.Color
 	Value          Property
 }
 
@@ -59,15 +64,14 @@ func (ne NumberEdit) Create(builder *Builder) error {
 		return err
 	}
 
-	return builder.InitWidget(ne, w, func() error {
-		if err := w.SetDecimals(ne.Decimals); err != nil {
-			return err
-		}
+	if ne.AssignTo != nil {
+		*ne.AssignTo = w
+	}
 
-		if err := w.SetPrefix(ne.Prefix); err != nil {
-			return err
-		}
-		if err := w.SetSuffix(ne.Suffix); err != nil {
+	return builder.InitWidget(ne, w, func() error {
+		w.SetTextColor(ne.TextColor)
+
+		if err := w.SetDecimals(ne.Decimals); err != nil {
 			return err
 		}
 
@@ -88,10 +92,6 @@ func (ne NumberEdit) Create(builder *Builder) error {
 
 		if ne.OnValueChanged != nil {
 			w.ValueChanged().Attach(ne.OnValueChanged)
-		}
-
-		if ne.AssignTo != nil {
-			*ne.AssignTo = w
 		}
 
 		return nil

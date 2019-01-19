@@ -21,35 +21,39 @@ const (
 type LineEdit struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
 
 	// LineEdit
 
+	Alignment         Alignment1D
 	AssignTo          **walk.LineEdit
 	CaseMode          CaseMode
 	CueBanner         string
@@ -59,6 +63,7 @@ type LineEdit struct {
 	PasswordMode      bool
 	ReadOnly          Property
 	Text              Property
+	TextColor         walk.Color
 }
 
 func (le LineEdit) Create(builder *Builder) error {
@@ -67,7 +72,17 @@ func (le LineEdit) Create(builder *Builder) error {
 		return err
 	}
 
+	if le.AssignTo != nil {
+		*le.AssignTo = w
+	}
+
 	return builder.InitWidget(le, w, func() error {
+		w.SetTextColor(le.TextColor)
+
+		if err := w.SetAlignment(walk.Alignment1D(le.Alignment)); err != nil {
+			return err
+		}
+
 		if le.CueBanner != "" {
 			if err := w.SetCueBanner(le.CueBanner); err != nil {
 				return err
@@ -85,10 +100,6 @@ func (le LineEdit) Create(builder *Builder) error {
 		}
 		if le.OnTextChanged != nil {
 			w.TextChanged().Attach(le.OnTextChanged)
-		}
-
-		if le.AssignTo != nil {
-			*le.AssignTo = w
 		}
 
 		return nil

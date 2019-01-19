@@ -13,29 +13,32 @@ import (
 type RadioButton struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -47,8 +50,9 @@ type RadioButton struct {
 
 	// RadioButton
 
-	AssignTo **walk.RadioButton
-	Value    interface{}
+	AssignTo       **walk.RadioButton
+	TextOnLeftSide bool
+	Value          interface{}
 }
 
 func (rb RadioButton) Create(builder *Builder) error {
@@ -57,15 +61,19 @@ func (rb RadioButton) Create(builder *Builder) error {
 		return err
 	}
 
+	if rb.AssignTo != nil {
+		*rb.AssignTo = w
+	}
+
 	return builder.InitWidget(rb, w, func() error {
 		w.SetValue(rb.Value)
 
-		if rb.OnClicked != nil {
-			w.Clicked().Attach(rb.OnClicked)
+		if err := w.SetTextOnLeftSide(rb.TextOnLeftSide); err != nil {
+			return err
 		}
 
-		if rb.AssignTo != nil {
-			*rb.AssignTo = w
+		if rb.OnClicked != nil {
+			w.Clicked().Attach(rb.OnClicked)
 		}
 
 		return nil

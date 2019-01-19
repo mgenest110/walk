@@ -8,9 +8,7 @@ package walk
 
 import (
 	"unsafe"
-)
 
-import (
 	"github.com/lxn/win"
 )
 
@@ -207,14 +205,24 @@ func (sv *ScrollView) MouseUp() *MouseEvent {
 
 func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
 	if sv.composite != nil {
+		avoidBGArtifacts := func() {
+			if sv.hasComplexBackground() {
+				sv.composite.Invalidate()
+			}
+		}
+
 		switch msg {
 		case win.WM_HSCROLL:
 			sv.composite.SetX(sv.scroll(win.SB_HORZ, win.LOWORD(uint32(wParam))))
-			sv.composite.Invalidate()
+			if wParam == win.SB_ENDSCROLL {
+				avoidBGArtifacts()
+			}
 
 		case win.WM_VSCROLL:
 			sv.composite.SetY(sv.scroll(win.SB_VERT, win.LOWORD(uint32(wParam))))
-			sv.composite.Invalidate()
+			if wParam == win.SB_ENDSCROLL {
+				avoidBGArtifacts()
+			}
 
 		case win.WM_MOUSEWHEEL:
 			if win.GetWindowLong(sv.hWnd, win.GWL_STYLE)&win.WS_VSCROLL == 0 {
@@ -229,7 +237,7 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			}
 
 			sv.composite.SetY(sv.scroll(win.SB_VERT, cmd))
-			sv.composite.Invalidate()
+			avoidBGArtifacts()
 
 			return 0
 
@@ -237,7 +245,13 @@ func (sv *ScrollView) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr)
 			sv.composite.WndProc(hwnd, msg, wParam, lParam)
 
 		case win.WM_SIZE, win.WM_SIZING:
-			s := maxSize(sv.composite.layout.MinSize(), sv.ClientBounds().Size())
+			var minSize Size
+			if fl, ok := sv.composite.layout.(*FlowLayout); ok {
+				minSize = fl.MinSizeForSize(sv.ClientBounds().Size())
+			} else {
+				minSize = sv.composite.layout.MinSize()
+			}
+			s := maxSize(minSize, sv.ClientBounds().Size())
 			sv.composite.SetSize(s)
 			sv.updateScrollBars()
 		}

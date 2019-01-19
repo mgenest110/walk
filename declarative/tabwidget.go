@@ -13,29 +13,32 @@ import (
 type TabWidget struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -53,6 +56,10 @@ func (tw TabWidget) Create(builder *Builder) error {
 	w, err := walk.NewTabWidget(builder.Parent())
 	if err != nil {
 		return err
+	}
+
+	if tw.AssignTo != nil {
+		*tw.AssignTo = w
 	}
 
 	return builder.InitWidget(tw, w, func() error {
@@ -77,10 +84,6 @@ func (tw TabWidget) Create(builder *Builder) error {
 
 		if tw.OnCurrentIndexChanged != nil {
 			w.CurrentIndexChanged().Attach(tw.OnCurrentIndexChanged)
-		}
-
-		if tw.AssignTo != nil {
-			*tw.AssignTo = w
 		}
 
 		return nil

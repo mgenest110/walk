@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-import _ "github.com/Knetic/govaluate"
+import _ "gopkg.in/Knetic/govaluate.v3"
 
 type Expression interface {
 	Value() interface{}
@@ -33,9 +33,13 @@ func (re *reflectExpression) Value() interface{} {
 		return nil
 	}
 
-	val, err := reflectValueFromPath(reflect.ValueOf(rootVal), re.path)
+	_, val, err := reflectValueFromPath(reflect.ValueOf(rootVal), re.path)
 	if err != nil {
 		log.Print("walk - reflectExpression.Value - Error: ", err.Error())
+	}
+
+	if !val.IsValid() {
+		return nil
 	}
 
 	return val.Interface()

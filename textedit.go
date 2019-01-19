@@ -19,6 +19,7 @@ type TextEdit struct {
 	WidgetBase
 	readOnlyChangedPublisher EventPublisher
 	textChangedPublisher     EventPublisher
+	textColor                Color
 }
 
 func NewTextEdit(parent Container) (*TextEdit, error) {
@@ -37,6 +38,9 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 		return nil, err
 	}
 
+	te.GraphicsEffects().Add(InteractionEffect)
+	te.GraphicsEffects().Add(FocusEffect)
+
 	te.MustRegisterProperty("ReadOnly", NewProperty(
 		func() interface{} {
 			return te.ReadOnly()
@@ -51,7 +55,7 @@ func NewTextEditWithStyle(parent Container, style uint32) (*TextEdit, error) {
 			return te.Text()
 		},
 		func(v interface{}) error {
-			return te.SetText(v.(string))
+			return te.SetText(assertStringOr(v, ""))
 		},
 		te.textChangedPublisher.Event()))
 
@@ -71,7 +75,7 @@ func (te *TextEdit) SizeHint() Size {
 }
 
 func (te *TextEdit) Text() string {
-	return windowText(te.hWnd)
+	return te.text()
 }
 
 func (te *TextEdit) TextLength() int {
@@ -83,9 +87,42 @@ func (te *TextEdit) SetText(value string) (err error) {
 		return nil
 	}
 
-	err = setWindowText(te.hWnd, value)
+	err = te.setText(value)
 	te.textChangedPublisher.Publish()
 	return
+}
+
+func (te *TextEdit) Alignment() Alignment1D {
+	switch win.GetWindowLong(te.hWnd, win.GWL_STYLE) & (win.ES_LEFT | win.ES_CENTER | win.ES_RIGHT) {
+	case win.ES_CENTER:
+		return AlignCenter
+
+	case win.ES_RIGHT:
+		return AlignFar
+	}
+
+	return AlignNear
+}
+
+func (te *TextEdit) SetAlignment(alignment Alignment1D) error {
+	if alignment == AlignDefault {
+		alignment = AlignNear
+	}
+
+	var bit uint32
+
+	switch alignment {
+	case AlignCenter:
+		bit = win.ES_CENTER
+
+	case AlignFar:
+		bit = win.ES_RIGHT
+
+	default:
+		bit = win.ES_LEFT
+	}
+
+	return te.ensureStyleBits(bit, true)
 }
 
 func (te *TextEdit) MaxLength() int {
@@ -135,6 +172,16 @@ func (te *TextEdit) SetReadOnly(readOnly bool) error {
 
 func (te *TextEdit) TextChanged() *Event {
 	return te.textChangedPublisher.Event()
+}
+
+func (te *TextEdit) TextColor() Color {
+	return te.textColor
+}
+
+func (te *TextEdit) SetTextColor(c Color) {
+	te.textColor = c
+
+	te.Invalidate()
 }
 
 func (te *TextEdit) WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

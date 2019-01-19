@@ -13,23 +13,26 @@ import (
 type Dialog struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftLayout  bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Container
 
@@ -62,29 +65,34 @@ func (d Dialog) Create(owner walk.Form) error {
 	} else {
 		w, err = walk.NewDialog(owner)
 	}
-
 	if err != nil {
 		return err
 	}
 
+	if d.AssignTo != nil {
+		*d.AssignTo = w
+	}
+
 	fi := formInfo{
 		// Window
-		Background:       d.Background,
-		ContextMenuItems: d.ContextMenuItems,
-		Enabled:          d.Enabled,
-		Font:             d.Font,
-		MaxSize:          d.MaxSize,
-		MinSize:          d.MinSize,
-		Name:             d.Name,
-		OnKeyDown:        d.OnKeyDown,
-		OnKeyPress:       d.OnKeyPress,
-		OnKeyUp:          d.OnKeyUp,
-		OnMouseDown:      d.OnMouseDown,
-		OnMouseMove:      d.OnMouseMove,
-		OnMouseUp:        d.OnMouseUp,
-		OnSizeChanged:    d.OnSizeChanged,
-		ToolTipText:      "",
-		Visible:          d.Visible,
+		Background:         d.Background,
+		ContextMenuItems:   d.ContextMenuItems,
+		Enabled:            d.Enabled,
+		Font:               d.Font,
+		MaxSize:            d.MaxSize,
+		MinSize:            d.MinSize,
+		Name:               d.Name,
+		OnBoundsChanged:    d.OnBoundsChanged,
+		OnKeyDown:          d.OnKeyDown,
+		OnKeyPress:         d.OnKeyPress,
+		OnKeyUp:            d.OnKeyUp,
+		OnMouseDown:        d.OnMouseDown,
+		OnMouseMove:        d.OnMouseMove,
+		OnMouseUp:          d.OnMouseUp,
+		OnSizeChanged:      d.OnSizeChanged,
+		RightToLeftReading: d.RightToLeftReading,
+		ToolTipText:        "",
+		Visible:            d.Visible,
 
 		// Container
 		Children:   d.Children,
@@ -106,8 +114,13 @@ func (d Dialog) Create(owner walk.Form) error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
+		w.SetBounds(w.Bounds())
 		return nil
 	})
+
+	if err := w.SetRightToLeftLayout(d.RightToLeftLayout); err != nil {
+		return err
+	}
 
 	return builder.InitWidget(fi, w, func() error {
 		if err := w.SetSize(d.Size.toW()); err != nil {
@@ -133,10 +146,6 @@ func (d Dialog) Create(owner walk.Form) error {
 			if err := w.SetCancelButton(*d.CancelButton); err != nil {
 				return err
 			}
-		}
-
-		if d.AssignTo != nil {
-			*d.AssignTo = w
 		}
 
 		if d.Expressions != nil {

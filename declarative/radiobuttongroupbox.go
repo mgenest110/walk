@@ -13,29 +13,32 @@ import (
 type RadioButtonGroupBox struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -66,6 +69,10 @@ func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
 		return err
 	}
 
+	if rbgb.AssignTo != nil {
+		*rbgb.AssignTo = w
+	}
+
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
@@ -85,10 +92,6 @@ func (rbgb RadioButtonGroupBox) Create(builder *Builder) error {
 			Buttons:    rbgb.Buttons,
 		}).Create(builder); err != nil {
 			return err
-		}
-
-		if rbgb.AssignTo != nil {
-			*rbgb.AssignTo = w
 		}
 
 		return nil

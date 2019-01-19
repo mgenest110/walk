@@ -8,34 +8,38 @@ package declarative
 
 import (
 	"github.com/lxn/walk"
+	"github.com/lxn/win"
 )
 
 type GradientComposite struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Widget
 
 	AlwaysConsumeSpace bool
 	Column             int
 	ColumnSpan         int
+	GraphicsEffects    []walk.WidgetGraphicsEffect
 	Row                int
 	RowSpan            int
 	StretchFactor      int
@@ -49,6 +53,7 @@ type GradientComposite struct {
 	// GradientComposite
 
 	AssignTo    **walk.GradientComposite
+	Border      bool
 	Color1      Property
 	Color2      Property
 	Expressions func() map[string]walk.Expression
@@ -57,9 +62,17 @@ type GradientComposite struct {
 }
 
 func (gc GradientComposite) Create(builder *Builder) error {
-	w, err := walk.NewGradientComposite(builder.Parent())
+	var style uint32
+	if gc.Border {
+		style |= win.WS_BORDER
+	}
+	w, err := walk.NewGradientCompositeWithStyle(builder.Parent(), style)
 	if err != nil {
 		return err
+	}
+
+	if gc.AssignTo != nil {
+		*gc.AssignTo = w
 	}
 
 	w.SetSuspended(true)
@@ -69,10 +82,6 @@ func (gc GradientComposite) Create(builder *Builder) error {
 	})
 
 	return builder.InitWidget(gc, w, func() error {
-		if gc.AssignTo != nil {
-			*gc.AssignTo = w
-		}
-
 		if gc.Expressions != nil {
 			for name, expr := range gc.Expressions() {
 				builder.expressions[name] = expr

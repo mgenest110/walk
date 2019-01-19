@@ -11,23 +11,26 @@ import "github.com/lxn/walk"
 type MainWindow struct {
 	// Window
 
-	Background       Brush
-	ContextMenuItems []MenuItem
-	Enabled          Property
-	Font             Font
-	MaxSize          Size
-	MinSize          Size
-	Name             string
-	OnKeyDown        walk.KeyEventHandler
-	OnKeyPress       walk.KeyEventHandler
-	OnKeyUp          walk.KeyEventHandler
-	OnMouseDown      walk.MouseEventHandler
-	OnMouseMove      walk.MouseEventHandler
-	OnMouseUp        walk.MouseEventHandler
-	OnSizeChanged    walk.EventHandler
-	Persistent       bool
-	ToolTipText      Property
-	Visible          Property
+	Background         Brush
+	ContextMenuItems   []MenuItem
+	Enabled            Property
+	Font               Font
+	MaxSize            Size
+	MinSize            Size
+	Name               string
+	OnBoundsChanged    walk.EventHandler
+	OnKeyDown          walk.KeyEventHandler
+	OnKeyPress         walk.KeyEventHandler
+	OnKeyUp            walk.KeyEventHandler
+	OnMouseDown        walk.MouseEventHandler
+	OnMouseMove        walk.MouseEventHandler
+	OnMouseUp          walk.MouseEventHandler
+	OnSizeChanged      walk.EventHandler
+	Persistent         bool
+	RightToLeftLayout  bool
+	RightToLeftReading bool
+	ToolTipText        Property
+	Visible            Property
 
 	// Container
 
@@ -59,23 +62,29 @@ func (mw MainWindow) Create() error {
 		return err
 	}
 
+	if mw.AssignTo != nil {
+		*mw.AssignTo = w
+	}
+
 	fi := formInfo{
 		// Window
-		Background:       mw.Background,
-		ContextMenuItems: mw.ContextMenuItems,
-		Enabled:          mw.Enabled,
-		Font:             mw.Font,
-		MaxSize:          mw.MaxSize,
-		MinSize:          mw.MinSize,
-		Name:             mw.Name,
-		OnKeyDown:        mw.OnKeyDown,
-		OnKeyPress:       mw.OnKeyPress,
-		OnKeyUp:          mw.OnKeyUp,
-		OnMouseDown:      mw.OnMouseDown,
-		OnMouseMove:      mw.OnMouseMove,
-		OnMouseUp:        mw.OnMouseUp,
-		OnSizeChanged:    mw.OnSizeChanged,
-		Visible:          mw.Visible,
+		Background:         mw.Background,
+		ContextMenuItems:   mw.ContextMenuItems,
+		Enabled:            mw.Enabled,
+		Font:               mw.Font,
+		MaxSize:            mw.MaxSize,
+		MinSize:            mw.MinSize,
+		Name:               mw.Name,
+		OnBoundsChanged:    mw.OnBoundsChanged,
+		OnKeyDown:          mw.OnKeyDown,
+		OnKeyPress:         mw.OnKeyPress,
+		OnKeyUp:            mw.OnKeyUp,
+		OnMouseDown:        mw.OnMouseDown,
+		OnMouseMove:        mw.OnMouseMove,
+		OnMouseUp:          mw.OnMouseUp,
+		OnSizeChanged:      mw.OnSizeChanged,
+		RightToLeftReading: mw.RightToLeftReading,
+		Visible:            mw.Visible,
 
 		// Container
 		Children:   mw.Children,
@@ -92,10 +101,15 @@ func (mw MainWindow) Create() error {
 	w.SetSuspended(true)
 	builder.Defer(func() error {
 		w.SetSuspended(false)
+		w.SetBounds(w.Bounds())
 		return nil
 	})
 
 	builder.deferBuildMenuActions(w.Menu(), mw.MenuItems)
+
+	if err := w.SetRightToLeftLayout(mw.RightToLeftLayout); err != nil {
+		return err
+	}
 
 	return builder.InitWidget(fi, w, func() error {
 		if len(mw.ToolBar.Items) > 0 {
@@ -147,9 +161,9 @@ func (mw MainWindow) Create() error {
 			w.DropFiles().Attach(mw.OnDropFiles)
 		}
 
-		if mw.AssignTo != nil {
-			*mw.AssignTo = w
-		}
+		// if mw.AssignTo != nil {
+		// 	*mw.AssignTo = w
+		// }
 
 		if mw.Expressions != nil {
 			for name, expr := range mw.Expressions() {

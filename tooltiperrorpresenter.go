@@ -1,8 +1,16 @@
+// Copyright 2017 The Walk Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// +build windows
+
 package walk
 
 import (
 	"github.com/lxn/win"
 )
+
+var ValidationErrorEffect WidgetGraphicsEffect
 
 type ToolTipErrorPresenter struct {
 	toolTip                     *ToolTip
@@ -79,6 +87,10 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 				}
 			}
 
+			if !found && wt == ttep.curWidget || wt != widget || err == nil {
+				wt.GraphicsEffects().Remove(ValidationErrorEffect)
+			}
+
 			return true
 		})
 	}
@@ -98,6 +110,10 @@ func (ttep *ToolTipErrorPresenter) PresentError(err error, widget Widget) {
 
 		if widget != ttep.curWidget {
 			ttep.track(widget)
+
+			if effects := widget.GraphicsEffects(); !effects.Contains(ValidationErrorEffect) {
+				effects.Add(ValidationErrorEffect)
+			}
 		}
 	}
 }
